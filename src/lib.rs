@@ -12,14 +12,15 @@ pub fn is_valid_port(port: &str) -> bool {
 }
 
 pub fn is_valid_ip(ip: &str) -> bool {
-    let octects_validity = ip.split('.')
-        .map(|octect|
-             if let Ok(_) = octect.parse::<u8>() {
+    let octects_validity = ip
+        .split('.')
+        .map(|octect| {
+            if let Ok(_) = octect.parse::<u8>() {
                 true
-             } else {
+            } else {
                 false
-             }
-        )
+            }
+        })
         .collect::<Vec<_>>();
     if octects_validity.len() == 4 && octects_validity.iter().all(|x| x == &true) {
         return true;

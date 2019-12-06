@@ -1,9 +1,11 @@
 use piston_window::*;
+use std::net::TcpStream;
 
 /// Stores game state of event loop.
 pub struct Game {
     pub title: &'static str,
     pub exit_button: Button,
+    pub stream: TcpStream,
 }
 
 impl Game {
