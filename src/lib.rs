@@ -1,6 +1,9 @@
 pub mod game;
 pub use game::*;
 
+pub mod client_option;
+pub use client_option::*;
+
 pub fn is_valid_port(port: &str) -> bool {
     if let Ok(x) = port.parse::<u32>() {
         // max port value
