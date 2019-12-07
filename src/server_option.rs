@@ -28,7 +28,7 @@ impl ServerOption {
         while let Some(e) = window.next() {
             set_local_ip_address(&mut self.ip_addr);
             window.draw_2d(&e, |c, g, device| {
-                clear([0.054, 0.062, 0.098, 1.0], g);
+                clear(BACKGROUND, g);
 
                 // red box highlight on PONG word
                 rectangle(
@@ -114,7 +114,7 @@ impl ServerOption {
                             exit_button: Button::Keyboard(Key::X),
                             stream: stream.unwrap(),
                         }
-                        .run(window);
+                        .run(window, glyphs);
                         window.set_title(self.title.into());
                         wait = LAPSE;
                         break;

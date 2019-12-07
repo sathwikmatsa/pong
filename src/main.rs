@@ -3,7 +3,7 @@ use pong::*;
 
 fn main() {
     let title = "Pong: Welcome";
-    let mut window: PistonWindow = WindowSettings::new(title, [640, 480])
+    let mut window: PistonWindow = WindowSettings::new(title, WIN_DIM)
         .exit_on_esc(true)
         .resizable(false)
         .build()

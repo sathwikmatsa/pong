@@ -1,7 +1,7 @@
+use super::*;
 use piston_window::*;
-use std::net::{TcpStream, Shutdown};
+use std::net::{Shutdown, TcpStream};
 
-/// Stores game state of event loop.
 pub struct Game {
     pub title: &'static str,
     pub exit_button: Button,
@@ -9,15 +9,16 @@ pub struct Game {
 }
 
 impl Game {
-    pub fn run(&mut self, window: &mut PistonWindow) {
+    pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
+        let state = GameState::new();
         window.set_title(self.title.into());
         while let Some(e) = window.next() {
-            window.draw_2d(&e, |_c, g, _| {
-                clear([0.0, 0.0, 0.0, 1.0], g);
-            });
+            state.render(window, &e, glyphs);
             if let Some(button) = e.press_args() {
                 if button == self.exit_button {
-                    self.stream.shutdown(Shutdown::Both).expect("shutdown failed");
+                    self.stream
+                        .shutdown(Shutdown::Both)
+                        .expect("shutdown failed");
                     break;
                 }
             }

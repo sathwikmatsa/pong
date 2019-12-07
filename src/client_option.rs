@@ -27,7 +27,7 @@ impl ClientOption {
 
         while let Some(e) = window.next() {
             window.draw_2d(&e, |c, g, device| {
-                clear([0.054, 0.062, 0.098, 1.0], g);
+                clear(BACKGROUND, g);
 
                 // red box highlight on PONG word
                 rectangle(
@@ -116,7 +116,7 @@ impl ClientOption {
                             exit_button: Button::Keyboard(Key::X),
                             stream,
                         }
-                        .run(window);
+                        .run(window, glyphs);
                         window.set_title(self.title.into());
                         self.conn_status = ConnMode::ValidAddress;
                         wait = LAPSE;
