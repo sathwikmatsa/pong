@@ -1,5 +1,5 @@
 use piston_window::*;
-use std::net::TcpStream;
+use std::net::{TcpStream, Shutdown};
 
 /// Stores game state of event loop.
 pub struct Game {
@@ -17,6 +17,7 @@ impl Game {
             });
             if let Some(button) = e.press_args() {
                 if button == self.exit_button {
+                    self.stream.shutdown(Shutdown::Both).expect("shutdown failed");
                     break;
                 }
             }

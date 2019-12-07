@@ -14,7 +14,7 @@ fn main() {
         .unwrap();
     let mut glyphs = window.load_font(assets.join("square.ttf")).unwrap();
 
-    window.set_lazy(true);
+    window.set_lazy(false);
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, device| {
             clear([0.054, 0.062, 0.098, 1.0], g);
@@ -59,7 +59,7 @@ fn main() {
                     g,
                 )
                 .unwrap();
-            
+
             // info url
             text::Text::new_color([0.0, 1.0, 0.0, 0.9], 12)
                 .draw(
@@ -70,7 +70,6 @@ fn main() {
                     g,
                 )
                 .unwrap();
-
 
             // Update glyphs before rendering.
             glyphs.factory.encoder.flush(device);
@@ -85,6 +84,11 @@ fn main() {
                         Button::Keyboard(Key::X),
                     )
                     .run(&mut window, &mut glyphs);
+                    window.set_title(title.into());
+                }
+                Key::S => {
+                    ServerOption::new("Pong: Waiting for peer", Button::Keyboard(Key::X))
+                        .run(&mut window, &mut glyphs);
                     window.set_title(title.into());
                 }
                 _ => (),
