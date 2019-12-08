@@ -23,10 +23,12 @@ impl ServerOption {
     }
     pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
         window.set_title(self.title.into());
-        let mut wait = LAPSE;
+        set_local_ip_address(&mut self.ip_addr);
+        self.listener
+            .set_nonblocking(true)
+            .expect("cannot set non blocking");
 
         while let Some(e) = window.next() {
-            set_local_ip_address(&mut self.ip_addr);
             window.draw_2d(&e, |c, g, device| {
                 clear(BACKGROUND, g);
 
@@ -104,22 +106,18 @@ impl ServerOption {
                 }
             }
 
-            wait -= 1;
             // listen for incoming connections
-            if wait <= 0 {
-                for stream in self.listener.incoming() {
-                    if stream.is_ok() {
-                        Game {
-                            title: "Pong multiplayer (press X to exit game)",
-                            exit_button: Button::Keyboard(Key::X),
-                            stream: stream.unwrap(),
-                        }
-                        .run(window, glyphs);
-                        window.set_title(self.title.into());
-                        wait = LAPSE;
-                        break;
-                    }
+            let stream = self.listener.accept();
+            if stream.is_ok() {
+                Game {
+                    title: "Pong: Server (press X to exit game)",
+                    exit_button: Button::Keyboard(Key::X),
+                    stream: stream.unwrap().0,
+                    is_left: false,
                 }
+                .run(window, glyphs);
+                window.set_title(self.title.into());
+                break;
             }
         }
     }

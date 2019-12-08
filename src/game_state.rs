@@ -3,11 +3,11 @@ use piston_window::ellipse::circle;
 use piston_window::*;
 
 pub struct GameState {
-    ball_pos: [u32; 2],
-    ball_velocity: [i8; 2],
-    left_pos: u32,
-    right_pos: u32,
-    score: [u8; 2],
+    pub ball_pos: [u32; 2],
+    pub ball_velocity: [i8; 2],
+    pub left_pos: u32,
+    pub right_pos: u32,
+    pub score: [u8; 2],
 }
 
 impl GameState {
@@ -72,12 +72,13 @@ impl GameState {
                     &self.score[1].to_string(),
                     glyphs,
                     &c.draw_state,
-                    c.transform
-                        .trans((WIN_DIM[0] - 3*PAD_DIM[0]) as f64, WIN_DIM[1] as f64 - 10.0),
+                    c.transform.trans(
+                        (WIN_DIM[0] - 3 * PAD_DIM[0]) as f64,
+                        WIN_DIM[1] as f64 - 10.0,
+                    ),
                     g,
                 )
                 .unwrap();
-
 
             // Update glyphs before rendering.
             glyphs.factory.encoder.flush(d);

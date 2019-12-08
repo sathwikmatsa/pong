@@ -1,4 +1,3 @@
-pub const LAPSE: u32 = 100;
 pub const BACKGROUND: [f32; 4] = [0.054, 0.062, 0.098, 1.0];
 pub const WIN_DIM: [u32; 2] = [640, 480];
 pub const PAD_DIM: [u32; 2] = [10, 80];

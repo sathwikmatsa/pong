@@ -23,7 +23,6 @@ impl ClientOption {
     }
     pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
         window.set_title(self.title.into());
-        let mut wait = LAPSE;
 
         while let Some(e) = window.next() {
             window.draw_2d(&e, |c, g, device| {
@@ -81,9 +80,6 @@ impl ClientOption {
                     )
                     .unwrap();
 
-                // validate user input and set status
-                set_status(&mut self.status, &self.peer_ip, &mut self.conn_status);
-
                 // status text
                 text::Text::new_color([1.0, 1.0, 1.0, 1.0], 8)
                     .draw(
@@ -100,29 +96,22 @@ impl ClientOption {
             });
 
             if self.conn_status == ConnMode::ReqForConnect {
-                // Above function `draw_2d` executes fewer times than this block. As a result,
-                // the current block  modifies `conn_status` even before the screen updates status.
-                // Hence, doing nothing for few iterations to let the screen update for
-                // better user experience.
-                wait -= 1;
-                if wait <= 0 {
-                    let peer_ip_port: SocketAddr = self.peer_ip.replace("/", ":").parse().unwrap();
-                    let conn = TcpStream::connect_timeout(&peer_ip_port, Duration::from_secs(5));
-                    if conn.is_ok() {
-                        self.conn_status = ConnMode::Connected;
-                        let stream = conn.unwrap();
-                        Game {
-                            title: "Pong multiplayer (press X to exit game)",
-                            exit_button: Button::Keyboard(Key::X),
-                            stream,
-                        }
-                        .run(window, glyphs);
-                        window.set_title(self.title.into());
-                        self.conn_status = ConnMode::ValidAddress;
-                        wait = LAPSE;
-                    } else {
-                        self.conn_status = ConnMode::FailedToConnect;
+                let peer_ip_port: SocketAddr = self.peer_ip.replace("/", ":").parse().unwrap();
+                let conn = TcpStream::connect_timeout(&peer_ip_port, Duration::from_secs(5));
+                if conn.is_ok() {
+                    self.conn_status = ConnMode::Connected;
+                    let stream = conn.unwrap();
+                    Game {
+                        title: "Pong: Client (press X to exit game)",
+                        exit_button: Button::Keyboard(Key::X),
+                        stream,
+                        is_left: true,
                     }
+                    .run(window, glyphs);
+                    window.set_title(self.title.into());
+                    self.conn_status = ConnMode::ValidAddress;
+                } else {
+                    self.conn_status = ConnMode::FailedToConnect;
                 }
             }
 
@@ -158,12 +147,13 @@ impl ClientOption {
                     Key::Return => {
                         if self.conn_status == ConnMode::ValidAddress {
                             self.conn_status = ConnMode::ReqForConnect;
-                            wait = LAPSE;
                         }
                     }
                     _ => (),
                 };
             }
+            // validate user input and set status
+            set_status(&mut self.status, &self.peer_ip, &mut self.conn_status);
         }
     }
 }

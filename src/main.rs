@@ -14,7 +14,6 @@ fn main() {
         .unwrap();
     let mut glyphs = window.load_font(assets.join("square.ttf")).unwrap();
 
-    window.set_lazy(false);
     while let Some(e) = window.next() {
         window.draw_2d(&e, |c, g, device| {
             clear([0.054, 0.062, 0.098, 1.0], g);
@@ -87,8 +86,11 @@ fn main() {
                     window.set_title(title.into());
                 }
                 Key::S => {
-                    ServerOption::new("Pong: Waiting for peer", Button::Keyboard(Key::X))
-                        .run(&mut window, &mut glyphs);
+                    ServerOption::new(
+                        "Pong: Waiting for peer (press X to go back)",
+                        Button::Keyboard(Key::X),
+                    )
+                    .run(&mut window, &mut glyphs);
                     window.set_title(title.into());
                 }
                 _ => (),
