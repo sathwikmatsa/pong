@@ -3,17 +3,23 @@ pub const WIN_DIM: [u32; 2] = [640, 480];
 pub const PAD_DIM: [u32; 2] = [10, 80];
 pub const BALL_RADIUS: f64 = 10.0;
 
-pub mod game;
-pub use game::*;
+pub mod client_window;
+pub use client_window::*;
 
-pub mod client_option;
-pub use client_option::*;
+pub mod server_window;
+pub use server_window::*;
 
-pub mod server_option;
-pub use server_option::*;
+pub mod game_window;
+pub use game_window::*;
 
-pub mod game_state;
-pub use game_state::*;
+pub mod game_model;
+pub use game_model::*;
+
+pub mod game_view;
+pub use game_view::*;
+
+pub mod game_controller;
+pub use game_controller::*;
 
 pub fn is_valid_port(port: &str) -> bool {
     if let Ok(x) = port.parse::<u32>() {

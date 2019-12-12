@@ -3,7 +3,7 @@ use piston_window::*;
 use std::net::{SocketAddr, TcpStream};
 use std::time::Duration;
 
-pub struct ClientOption {
+pub struct ClientWindow {
     title: &'static str,
     exit_button: Button,
     peer_ip: String,
@@ -11,7 +11,7 @@ pub struct ClientOption {
     conn_status: ConnMode,
 }
 
-impl ClientOption {
+impl ClientWindow {
     pub fn new(title: &'static str, exit_button: Button) -> Self {
         Self {
             title: title.into(),
@@ -101,11 +101,11 @@ impl ClientOption {
                 if conn.is_ok() {
                     self.conn_status = ConnMode::Connected;
                     let stream = conn.unwrap();
-                    Game {
+                    GameWindow {
                         title: "Pong: Client (press X to exit game)",
                         exit_button: Button::Keyboard(Key::X),
                         stream,
-                        is_left: true,
+                        player: Player::Left,
                     }
                     .run(window, glyphs);
                     window.set_title(self.title.into());

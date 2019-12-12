@@ -4,14 +4,14 @@ use std::net::TcpListener;
 
 const PORT: &str = "9731";
 
-pub struct ServerOption {
+pub struct ServerWindow {
     title: &'static str,
     exit_button: Button,
     ip_addr: String,
     listener: TcpListener,
 }
 
-impl ServerOption {
+impl ServerWindow {
     pub fn new(title: &'static str, exit_button: Button) -> Self {
         Self {
             title: title.into(),
@@ -109,11 +109,11 @@ impl ServerOption {
             // listen for incoming connections
             let stream = self.listener.accept();
             if stream.is_ok() {
-                Game {
+                GameWindow {
                     title: "Pong: Server (press X to exit game)",
                     exit_button: Button::Keyboard(Key::X),
                     stream: stream.unwrap().0,
-                    is_left: false,
+                    player: Player::Right,
                 }
                 .run(window, glyphs);
                 window.set_title(self.title.into());

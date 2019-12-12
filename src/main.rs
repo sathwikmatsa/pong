@@ -78,7 +78,7 @@ fn main() {
         if let Some(Button::Keyboard(key)) = e.press_args() {
             match key {
                 Key::C => {
-                    ClientOption::new(
+                    ClientWindow::new(
                         "Pong: Enter Server IP/PORT (press X to go back)",
                         Button::Keyboard(Key::X),
                     )
@@ -86,7 +86,7 @@ fn main() {
                     window.set_title(title.into());
                 }
                 Key::S => {
-                    ServerOption::new(
+                    ServerWindow::new(
                         "Pong: Waiting for peer (press X to go back)",
                         Button::Keyboard(Key::X),
                     )
