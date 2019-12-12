@@ -12,9 +12,7 @@ pub struct GameWindow {
 impl GameWindow {
     pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
         self.stream.set_nodelay(true).expect("set nodelay failed");
-        self.stream
-            .set_nonblocking(false)
-            .expect("set blocking mode failed");
+        self.stream.set_nonblocking(true).expect("non block mode failed");
         window.set_title(self.title.into());
 
         let model = GameModel::new(self.player);
@@ -23,7 +21,8 @@ impl GameWindow {
 
         while let Some(e) = window.next() {
             view.render(&controller, window, &e, glyphs);
-            controller.event(&e, &mut self.stream);
+            controller.handle_event(&e, &mut self.stream);
+
             if Some(self.exit_button) == e.press_args() {
                 self.stream
                     .shutdown(Shutdown::Both)

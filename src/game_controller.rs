@@ -20,7 +20,7 @@ impl GameController {
             state: game_state,
         }
     }
-    pub fn event<E: GenericEvent>(&mut self, e: &E, conn: &mut TcpStream) {
+    pub fn handle_event<E: GenericEvent>(&mut self, e: &E, conn: &mut TcpStream) {
         let mut movement : u8 = Movement::NoOp as u8;
         // process key presses
         if let Some(button) = e.press_args() {
@@ -33,13 +33,18 @@ impl GameController {
             }
         }
 
+        conn.set_nonblocking(false)
+            .expect("set_nonblocking failed [f]");
         // send movement to opponent
-        conn.write(&[movement]).unwrap();
+        if movement != Movement::NoOp as u8 {
+            conn.write(&[movement]).unwrap();
+        }
+        conn.set_nonblocking(true)
+            .expect("set_nonblocking failed [l]");
 
         // read opponent's movements
         let mut buf = [0; 10];
-        if conn.peek(&mut buf).expect("peek failed") != 0 {
-            let len = conn.read(&mut buf).expect("read failed");
+        if let Ok(len) = conn.read(&mut buf) {
             // update opponent movements
             for i in 0..len {
                 if buf[i] == Movement::Up as u8 {
