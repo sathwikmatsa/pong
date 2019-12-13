@@ -12,7 +12,9 @@ pub struct GameWindow {
 impl GameWindow {
     pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
         self.stream.set_nodelay(true).expect("set nodelay failed");
-        self.stream.set_nonblocking(true).expect("non block mode failed");
+        self.stream
+            .set_nonblocking(true)
+            .expect("non block mode failed");
         window.set_title(self.title.into());
 
         let model = GameModel::new(self.player);

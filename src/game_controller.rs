@@ -1,7 +1,7 @@
 use super::*;
 use piston_window::*;
-use std::net::TcpStream;
 use std::io::*;
+use std::net::TcpStream;
 
 #[repr(u8)]
 enum Movement {
@@ -11,17 +11,15 @@ enum Movement {
 }
 
 pub struct GameController {
-    pub state: GameModel
+    pub state: GameModel,
 }
 
 impl GameController {
     pub fn new(game_state: GameModel) -> Self {
-        Self {
-            state: game_state,
-        }
+        Self { state: game_state }
     }
     pub fn handle_event<E: GenericEvent>(&mut self, e: &E, conn: &mut TcpStream) {
-        let mut movement : u8 = Movement::NoOp as u8;
+        let mut movement: u8 = Movement::NoOp as u8;
         // process key presses
         if let Some(button) = e.press_args() {
             if button == Button::Keyboard(Key::Up) {
@@ -53,6 +51,11 @@ impl GameController {
                     self.state.move_opponent_down();
                 }
             }
+        }
+
+        // update ball
+        if let Some(args) = e.update_args() {
+            self.state.update_ball(args.dt);
         }
     }
 }
