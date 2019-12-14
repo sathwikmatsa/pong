@@ -47,7 +47,10 @@ impl GameController {
         // update ball
         if let Some(args) = e.update_args() {
             let mut state = self.state.lock().unwrap();
-            (*state).update_ball(args.dt);
+            let player_collides_ball = (*state).update_ball(args.dt);
+            if player_collides_ball {
+                syncer_conn.send(Message::PadCollide).unwrap();
+            }
         }
     }
 }
