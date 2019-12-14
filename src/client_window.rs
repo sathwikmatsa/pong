@@ -14,7 +14,7 @@ pub struct ClientWindow {
 impl ClientWindow {
     pub fn new(title: &'static str, exit_button: Button) -> Self {
         Self {
-            title: title.into(),
+            title,
             exit_button,
             peer_ip: String::new(),
             status: String::new(),
@@ -98,9 +98,8 @@ impl ClientWindow {
             if self.conn_status == ConnMode::ReqForConnect {
                 let peer_ip_port: SocketAddr = self.peer_ip.replace("/", ":").parse().unwrap();
                 let conn = TcpStream::connect_timeout(&peer_ip_port, Duration::from_secs(5));
-                if conn.is_ok() {
+                if let Ok(stream) = conn {
                     self.conn_status = ConnMode::Connected;
-                    let stream = conn.unwrap();
                     GameWindow {
                         title: "Pong: Client (press X to exit game)",
                         exit_button: Button::Keyboard(Key::X),
@@ -167,7 +166,7 @@ enum ConnMode {
     FailedToConnect,
 }
 
-fn set_status(status: &mut String, ip: &String, conn_mode: &mut ConnMode) {
+fn set_status(status: &mut String, ip: &str, conn_mode: &mut ConnMode) {
     status.clear();
     if *conn_mode == ConnMode::ReqForConnect {
         status.push_str("status: connecting with peer..");
@@ -175,7 +174,7 @@ fn set_status(status: &mut String, ip: &String, conn_mode: &mut ConnMode) {
         status.push_str("status: failed to connect with peer.");
     } else if *conn_mode == ConnMode::Connected {
         status.push_str("status: SUCCESS! Press \"ENTER\".");
-    } else if ip.len() == 0 {
+    } else if ip.is_empty() {
         status.push_str("status: waiting for ip/port input.");
         *conn_mode = ConnMode::InvalidAddress;
     } else {

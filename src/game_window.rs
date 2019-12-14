@@ -1,6 +1,8 @@
 use super::*;
 use piston_window::*;
-use std::net::{Shutdown, TcpStream};
+use std::net::TcpStream;
+use std::sync::{mpsc::channel, Arc, Mutex};
+use std::thread;
 
 pub struct GameWindow {
     pub title: &'static str,
@@ -10,7 +12,7 @@ pub struct GameWindow {
 }
 
 impl GameWindow {
-    pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
+    pub fn run(self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
         self.stream.set_nodelay(true).expect("set nodelay failed");
         self.stream
             .set_nonblocking(true)
@@ -18,17 +20,23 @@ impl GameWindow {
         window.set_title(self.title.into());
 
         let model = GameModel::new(self.player);
+        let shared_model = Arc::new(Mutex::new(model));
+        let shared_model_clone = shared_model.clone();
+        let exit_button = self.exit_button;
+
+        let (sender, receiver) = channel();
+        thread::spawn(move || {
+            Syncer::new(shared_model_clone, self.stream).run(receiver);
+        });
+
         let view = GameView::new();
-        let mut controller = GameController::new(model);
+        let mut controller = GameController::new(shared_model);
 
         while let Some(e) = window.next() {
             view.render(&controller, window, &e, glyphs);
-            controller.handle_event(&e, &mut self.stream);
+            controller.handle_event(&e, &sender);
 
-            if Some(self.exit_button) == e.press_args() {
-                self.stream
-                    .shutdown(Shutdown::Both)
-                    .expect("shutdown failed");
+            if Some(exit_button) == e.press_args() {
                 break;
             }
         }

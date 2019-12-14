@@ -1,61 +1,53 @@
 use super::*;
 use piston_window::*;
-use std::io::*;
-use std::net::TcpStream;
+use std::sync::{mpsc::Sender, Arc, Mutex};
 
 #[repr(u8)]
-enum Movement {
-    Up = 1,
-    Down = 2,
-    NoOp = 0,
+pub enum Message {
+    MoveUp = 1,
+    MoveDown = 2,
+    PadCollide = 3,
+    Invalid = 4,
+}
+
+impl Message {
+    pub fn from_u8(i: u8) -> Self {
+        match i {
+            1 => Message::MoveUp,
+            2 => Message::MoveDown,
+            3 => Message::PadCollide,
+            _ => Message::Invalid,
+        }
+    }
 }
 
 pub struct GameController {
-    pub state: GameModel,
+    pub state: Arc<Mutex<GameModel>>,
 }
 
 impl GameController {
-    pub fn new(game_state: GameModel) -> Self {
-        Self { state: game_state }
+    pub fn new(shared_game_state: Arc<Mutex<GameModel>>) -> Self {
+        Self {
+            state: shared_game_state,
+        }
     }
-    pub fn handle_event<E: GenericEvent>(&mut self, e: &E, conn: &mut TcpStream) {
-        let mut movement: u8 = Movement::NoOp as u8;
+    pub fn handle_event<E: GenericEvent>(&mut self, e: &E, syncer_conn: &Sender<Message>) {
         // process key presses
         if let Some(button) = e.press_args() {
+            let mut state = self.state.lock().unwrap();
             if button == Button::Keyboard(Key::Up) {
-                self.state.move_up();
-                movement = Movement::Up as u8;
+                (*state).move_up();
+                syncer_conn.send(Message::MoveUp).unwrap();
             } else if button == Button::Keyboard(Key::Down) {
-                self.state.move_down();
-                movement = Movement::Down as u8;
-            }
-        }
-
-        conn.set_nonblocking(false)
-            .expect("set_nonblocking failed [f]");
-        // send movement to opponent
-        if movement != Movement::NoOp as u8 {
-            conn.write(&[movement]).unwrap();
-        }
-        conn.set_nonblocking(true)
-            .expect("set_nonblocking failed [l]");
-
-        // read opponent's movements
-        let mut buf = [0; 10];
-        if let Ok(len) = conn.read(&mut buf) {
-            // update opponent movements
-            for i in 0..len {
-                if buf[i] == Movement::Up as u8 {
-                    self.state.move_opponent_up();
-                } else if buf[i] == Movement::Down as u8 {
-                    self.state.move_opponent_down();
-                }
+                (*state).move_down();
+                syncer_conn.send(Message::MoveDown).unwrap();
             }
         }
 
         // update ball
         if let Some(args) = e.update_args() {
-            self.state.update_ball(args.dt);
+            let mut state = self.state.lock().unwrap();
+            (*state).update_ball(args.dt);
         }
     }
 }

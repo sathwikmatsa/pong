@@ -14,7 +14,7 @@ pub struct ServerWindow {
 impl ServerWindow {
     pub fn new(title: &'static str, exit_button: Button) -> Self {
         Self {
-            title: title.into(),
+            title,
             exit_button,
             ip_addr: String::new(),
             listener: TcpListener::bind("127.0.0.1:".to_owned() + PORT)
@@ -108,11 +108,11 @@ impl ServerWindow {
 
             // listen for incoming connections
             let stream = self.listener.accept();
-            if stream.is_ok() {
+            if let Ok(stream) = stream {
                 GameWindow {
                     title: "Pong: Server (press X to exit game)",
                     exit_button: Button::Keyboard(Key::X),
-                    stream: stream.unwrap().0,
+                    stream: stream.0,
                     player: Player::Right,
                 }
                 .run(window, glyphs);

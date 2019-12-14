@@ -9,6 +9,7 @@ pub enum Player {
     Right,
 }
 
+#[derive(Clone)]
 pub struct GameModel {
     pub ball_centre: [i32; 2],
     pub ball_velocity: [f64; 2],
