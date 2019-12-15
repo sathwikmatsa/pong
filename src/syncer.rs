@@ -41,7 +41,7 @@ where
                     Message::MoveUp => (*state).move_opponent_up(),
                     Message::MoveDown => (*state).move_opponent_down(),
                     Message::PadCollide => {
-                        let mut ball_data = [0; 24];
+                        let mut ball_data = [0; 16];
                         while self.conn.read_exact(&mut ball_data).is_err() {}
                         (*state).reset_ball(ball_data);
                     }

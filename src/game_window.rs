@@ -8,7 +8,7 @@ pub struct GameWindow {
     pub title: &'static str,
     pub exit_button: Button,
     pub stream: TcpStream,
-    pub player: Player,
+    pub player_pad: Pad,
 }
 
 impl GameWindow {
@@ -19,7 +19,7 @@ impl GameWindow {
             .expect("non block mode failed");
         window.set_title(self.title.into());
 
-        let model = GameModel::new(self.player);
+        let model = GameModel::new(self.player_pad, DEFAULT_CONFIG);
         let shared_model = Arc::new(Mutex::new(model));
         let shared_model_clone = shared_model.clone();
         let exit_button = self.exit_button;
@@ -29,7 +29,7 @@ impl GameWindow {
             Syncer::new(shared_model_clone, self.stream).run(receiver);
         });
 
-        let view = GameView::new();
+        let view = GameView::new(DEFAULT_CONFIG);
         let mut controller = GameController::new(shared_model);
 
         while let Some(e) = window.next() {

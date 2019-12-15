@@ -30,7 +30,7 @@ impl ServerWindow {
 
         while let Some(e) = window.next() {
             window.draw_2d(&e, |c, g, device| {
-                clear(BACKGROUND, g);
+                clear(DEFAULT_CONFIG.bg_color, g);
 
                 // red box highlight on PONG word
                 rectangle(
@@ -113,7 +113,7 @@ impl ServerWindow {
                     title: "Pong: Server (press X to exit game)",
                     exit_button: Button::Keyboard(Key::X),
                     stream: stream.0,
-                    player: Player::Right,
+                    player_pad: Pad::Right,
                 }
                 .run(window, glyphs);
                 window.set_title(self.title.into());

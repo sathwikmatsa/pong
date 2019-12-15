@@ -1,14 +1,14 @@
 use super::*;
 use piston_window::ellipse::circle;
 use piston_window::*;
-use std::sync::{Arc, Mutex};
 
-#[derive(Default)]
-pub struct GameView {}
+pub struct GameView {
+    config: GameSettings,
+}
 
 impl GameView {
-    pub fn new() -> Self {
-        Self {}
+    pub fn new(config: GameSettings) -> Self {
+        Self { config }
     }
     pub fn render(
         &self,
@@ -20,59 +20,74 @@ impl GameView {
         screen.draw_2d(e, |c, g, d| {
             let state = controller.state.game_state_copy();
 
-            clear(BACKGROUND, g);
-            let left_paddle = Rectangle::new_round(color::WHITE, 0.5);
-            let right_paddle = Rectangle::new_round(color::WHITE, 0.5);
-            let ball = Ellipse::new(color::WHITE);
+            clear(self.config.bg_color, g);
+            let left_paddle =
+                Rectangle::new_round(self.config.paddle_color, self.config.paddle_round_radius);
+            let right_paddle =
+                Rectangle::new_round(self.config.paddle_color, self.config.paddle_round_radius);
+            let ball = Ellipse::new(self.config.ball_color);
 
             left_paddle.draw(
-                [0.0, 0.0, PAD_DIM[0] as f64, PAD_DIM[1] as f64],
+                [
+                    0.,
+                    0.,
+                    self.config.paddle_width as f64,
+                    self.config.paddle_height as f64,
+                ],
                 &c.draw_state,
-                c.transform.trans(0.0, state.left_pos as f64),
+                c.transform
+                    .trans(self.config.paddle_margin as f64, state.left_pad_top as f64),
                 g,
             );
 
             right_paddle.draw(
-                [0.0, 0.0, PAD_DIM[0] as f64, PAD_DIM[1] as f64],
+                [
+                    0.,
+                    0.,
+                    self.config.paddle_width as f64,
+                    self.config.paddle_height as f64,
+                ],
                 &c.draw_state,
-                c.transform
-                    .trans((WIN_DIM[0] - PAD_DIM[0]) as f64, state.right_pos as f64),
+                c.transform.trans(
+                    (self.config.window_width
+                        - self.config.paddle_width
+                        - self.config.paddle_margin) as f64,
+                    state.right_pad_top as f64,
+                ),
                 g,
             );
 
             ball.draw(
                 circle(
-                    state.ball_centre[0] as f64,
-                    state.ball_centre[1] as f64,
-                    BALL_RADIUS,
+                    state.ball.centre_x_f64(),
+                    state.ball.centre_y_f64(),
+                    self.config.ball_radius,
                 ),
                 &c.draw_state,
                 c.transform,
                 g,
             );
 
-            // left paddle score
-            text::Text::new_color([1.0, 1.0, 1.0, 0.5], 12)
+            // left player score
+            text::Text::new_color(self.config.score_color, self.config.score_font_size)
                 .draw(
-                    &state.score[0].to_string(),
+                    &state.score_board[0].to_string(),
                     glyphs,
                     &c.draw_state,
                     c.transform
-                        .trans(PAD_DIM[0] as f64, WIN_DIM[1] as f64 - 10.0),
+                        .trans(self.config.left_score_xy[0], self.config.left_score_xy[1]),
                     g,
                 )
                 .unwrap();
 
-            // right paddle score
-            text::Text::new_color([1.0, 1.0, 1.0, 0.5], 12)
+            // right player score
+            text::Text::new_color(self.config.score_color, self.config.score_font_size)
                 .draw(
-                    &state.score[1].to_string(),
+                    &state.score_board[1].to_string(),
                     glyphs,
                     &c.draw_state,
-                    c.transform.trans(
-                        (WIN_DIM[0] - 3 * PAD_DIM[0]) as f64,
-                        WIN_DIM[1] as f64 - 10.0,
-                    ),
+                    c.transform
+                        .trans(self.config.right_score_xy[0], self.config.right_score_xy[1]),
                     g,
                 )
                 .unwrap();
@@ -80,16 +95,5 @@ impl GameView {
             // Update glyphs before rendering.
             glyphs.factory.encoder.flush(d);
         });
-    }
-}
-
-pub trait SharedGameModel {
-    fn game_state_copy(&self) -> GameModel;
-}
-
-impl SharedGameModel for Arc<Mutex<GameModel>> {
-    fn game_state_copy(&self) -> GameModel {
-        let guard = self.lock().unwrap();
-        (*guard).clone()
     }
 }

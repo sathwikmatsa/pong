@@ -1,8 +1,22 @@
-pub const BACKGROUND: [f32; 4] = [0.054, 0.062, 0.098, 1.0];
-pub const WIN_DIM: [u32; 2] = [640, 480];
-pub const PAD_DIM: [u32; 2] = [10, 80];
-pub const BALL_RADIUS: f64 = 5.0;
-pub const PADDLE_STEP: u32 = 13;
+pub const DEFAULT_CONFIG: GameSettings = GameSettings {
+    window_width: 640,
+    window_height: 480,
+    paddle_width: 10,
+    paddle_height: 80,
+    paddle_round_radius: 0.1,
+    paddle_margin: 5,
+    paddle_step: 13,
+    ball_radius: 5.,
+    ball_speed: 400,
+    max_bounce_angle: std::f64::consts::PI * 5. / 12.,
+    bg_color: [0.054, 0.062, 0.098, 1.0],
+    paddle_color: [1.; 4],
+    ball_color: [1.; 4],
+    score_color: [1.; 4],
+    score_font_size: 12,
+    left_score_xy: [20., 20.],
+    right_score_xy: [610., 20.],
+};
 
 pub mod client_window;
 pub use client_window::*;
@@ -22,11 +36,14 @@ pub use game_view::*;
 pub mod game_controller;
 pub use game_controller::*;
 
+pub mod game_settings;
+pub use game_settings::*;
+
 pub mod syncer;
 pub use syncer::*;
 
-pub mod vector;
-pub use vector::*;
+pub mod ball;
+pub use ball::*;
 
 pub fn is_valid_port(port: &str) -> bool {
     if let Ok(x) = port.parse::<u32>() {

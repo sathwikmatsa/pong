@@ -1,162 +1,187 @@
 use super::*;
-use arrayvec::ArrayVec;
 use std::cmp::min;
-
-pub const MAXBOUNCEANGLE: f64 = std::f64::consts::PI * 5. / 12.; // 75 degrees
+use std::sync::{Arc, Mutex};
 
 #[derive(PartialEq, Copy, Clone)]
-pub enum Player {
+pub enum Pad {
     Left,
     Right,
 }
 
 #[derive(Clone)]
 pub struct GameModel {
-    pub ball_centre: [i32; 2],
-    pub ball_velocity: [f64; 2],
-    pub left_pos: u32,
-    pub right_pos: u32,
-    pub score: [u8; 2],
-    pub player: Player,
+    pub ball: Ball,
+    pub left_pad_top: u32,
+    pub right_pad_top: u32,
+    pub score_board: [u8; 2],
+    pub player_pad: Pad,
+    config: GameSettings,
 }
 
 impl GameModel {
-    pub fn new(player: Player) -> Self {
+    pub fn new(player_pad: Pad, config: GameSettings) -> Self {
         Self {
-            ball_centre: [WIN_DIM[0] as i32 / 2, WIN_DIM[1] as i32 / 2],
-            ball_velocity: [400., 0.],
-            left_pos: WIN_DIM[1] / 2 - PAD_DIM[1] / 2,
-            right_pos: WIN_DIM[1] / 2 - PAD_DIM[1] / 2,
-            score: [0, 0],
-            player,
+            ball: Ball::new(
+                [
+                    config.window_width as i32 / 2,
+                    config.window_height as i32 / 2,
+                ],
+                [config.ball_speed as f32, 0.],
+                config.ball_radius,
+            ),
+            left_pad_top: (config.window_height - config.paddle_height) / 2,
+            right_pad_top: (config.window_height - config.paddle_height) / 2,
+            score_board: [0, 0],
+            player_pad,
+            config,
         }
     }
     pub fn move_up(&mut self) {
-        if self.player == Player::Left {
-            self.left_pos = self.left_pos.saturating_sub(PADDLE_STEP);
+        if self.player_pad == Pad::Left {
+            self.left_pad_top = self.left_pad_top.saturating_sub(self.config.paddle_step);
         } else {
-            self.right_pos = self.right_pos.saturating_sub(PADDLE_STEP);
+            self.right_pad_top = self.right_pad_top.saturating_sub(self.config.paddle_step);
         }
     }
-
     pub fn move_down(&mut self) {
-        if self.player == Player::Left {
-            self.left_pos += PADDLE_STEP;
-            self.left_pos = min(self.left_pos, WIN_DIM[1] - PAD_DIM[1])
+        if self.player_pad == Pad::Left {
+            self.left_pad_top += self.config.paddle_step;
+            // restricting paddle movement below bottom wall
+            self.left_pad_top = min(
+                self.left_pad_top,
+                self.config.window_height - self.config.paddle_height,
+            );
         } else {
-            self.right_pos += PADDLE_STEP;
-            self.right_pos = min(self.right_pos, WIN_DIM[1] - PAD_DIM[1])
+            self.right_pad_top += self.config.paddle_step;
+            self.right_pad_top = min(
+                self.right_pad_top,
+                self.config.window_height - self.config.paddle_height,
+            );
         }
     }
     pub fn move_opponent_up(&mut self) {
-        if self.player != Player::Left {
-            self.left_pos = self.left_pos.saturating_sub(PADDLE_STEP);
+        if self.player_pad != Pad::Left {
+            self.left_pad_top = self.left_pad_top.saturating_sub(self.config.paddle_step);
         } else {
-            self.right_pos = self.right_pos.saturating_sub(PADDLE_STEP);
+            self.right_pad_top = self.right_pad_top.saturating_sub(self.config.paddle_step);
         }
     }
-
     pub fn move_opponent_down(&mut self) {
-        if self.player != Player::Left {
-            self.left_pos += PADDLE_STEP;
-            self.left_pos = min(self.left_pos, WIN_DIM[1] - PAD_DIM[1])
+        if self.player_pad != Pad::Left {
+            self.left_pad_top += self.config.paddle_step;
+            // restricting paddle movement below bottom wall
+            self.left_pad_top = min(
+                self.left_pad_top,
+                self.config.window_height - self.config.paddle_height,
+            );
         } else {
-            self.right_pos += PADDLE_STEP;
-            self.right_pos = min(self.right_pos, WIN_DIM[1] - PAD_DIM[1])
+            self.right_pad_top += self.config.paddle_step;
+            self.right_pad_top = min(
+                self.right_pad_top,
+                self.config.window_height - self.config.paddle_height,
+            );
         }
     }
+    fn get_bounce_angle(&self, pad: Pad) -> f64 {
+        // https://gamedev.stackexchange.com/a/4255
+        let relative_intersect_y = if pad == Pad::Left {
+            (self.left_pad_top + self.config.paddle_height / 2) as i32 - self.ball.centre_y()
+        } else {
+            (self.right_pad_top + self.config.paddle_height / 2) as i32 - self.ball.centre_y()
+        };
+        let normalized_riy: f64 =
+            relative_intersect_y as f64 / (self.config.paddle_height as f64 / 2.);
 
+        normalized_riy * self.config.max_bounce_angle
+    }
+    fn respawn_ball_from(&mut self, pad: Pad) {
+        if pad == Pad::Left {
+            self.ball.centre = [
+                (2 * self.config.paddle_width + self.config.paddle_margin) as i32,
+                self.config.window_height as i32 / 2,
+            ];
+            self.ball.velocity = [self.config.ball_speed as f32, 0.].into();
+        } else {
+            self.ball.centre = [
+                (self.config.window_width
+                    - 2 * self.config.paddle_width
+                    - self.config.paddle_margin) as i32,
+                self.config.window_height as i32 / 2,
+            ];
+            self.ball.velocity = [-(self.config.ball_speed as f32), 0.].into();
+        }
+    }
     pub fn update_ball(&mut self, dt: f64) -> bool {
-        let ball_vector = Vector::from(self.ball_velocity);
-        let ball_speed = ball_vector.magnitude();
+        let left_paddle_topx = self.config.paddle_margin + self.config.paddle_width;
+        let right_paddle_topx =
+            self.config.window_width - self.config.paddle_margin - self.config.paddle_width;
+        let ball_speed = self.config.ball_speed;
         let mut player_collides_ball = false;
+
         // collision logic
         // left paddle
-        if self.ball_centre[0] - BALL_RADIUS as i32 <= PAD_DIM[0] as i32
-            && self.ball_centre[1] >= self.left_pos as i32
-            && self.ball_centre[1] <= (self.left_pos + PAD_DIM[1]) as i32
-        {
-            let rel_intr_y = (self.left_pos + PAD_DIM[1] / 2) as i32 - self.ball_centre[1];
-            let norm_rel_intr_y: f64 = rel_intr_y as f64 / (PAD_DIM[1] as f64 / 2.);
-            let bounce_angle = norm_rel_intr_y * MAXBOUNCEANGLE;
-            self.ball_velocity = [
-                ball_speed * bounce_angle.cos(),
-                ball_speed * -bounce_angle.sin(),
-            ];
-            if self.player == Player::Left {
+        if self.ball.collides_left_vseg(
+            self.left_pad_top,
+            self.config.paddle_height,
+            left_paddle_topx,
+        ) {
+            self.ball
+                .reflect_from_left(self.get_bounce_angle(Pad::Left), ball_speed);
+            if self.player_pad == Pad::Left {
                 player_collides_ball = true;
             }
         // right paddle
-        } else if self.ball_centre[0] + BALL_RADIUS as i32 >= (WIN_DIM[0] - PAD_DIM[0]) as i32
-            && self.ball_centre[1] >= self.right_pos as i32
-            && self.ball_centre[1] <= (self.right_pos + PAD_DIM[1]) as i32
-        {
-            let rel_intr_y = (self.right_pos + PAD_DIM[1] / 2) as i32 - self.ball_centre[1];
-            let norm_rel_intr_y: f64 = rel_intr_y as f64 / (PAD_DIM[1] as f64 / 2.);
-            let bounce_angle = norm_rel_intr_y * MAXBOUNCEANGLE;
-            self.ball_velocity = [
-                -ball_speed * bounce_angle.cos(),
-                ball_speed * -bounce_angle.sin(),
-            ];
-            if self.player == Player::Right {
+        } else if self.ball.collides_right_vseg(
+            self.right_pad_top,
+            self.config.paddle_height,
+            right_paddle_topx,
+        ) {
+            self.ball
+                .reflect_from_right(self.get_bounce_angle(Pad::Right), ball_speed);
+            if self.player_pad == Pad::Right {
                 player_collides_ball = true;
             }
         // right wall
-        } else if self.ball_centre[0] + BALL_RADIUS as i32 >= WIN_DIM[0] as i32 {
-            self.score[0] += 1;
-            self.ball_centre = [(WIN_DIM[0] - 2 * PAD_DIM[0]) as i32, WIN_DIM[1] as i32 / 2];
-            self.ball_velocity = [-400.0, 0.];
+        } else if self.ball.centre_x() + self.config.ball_radius as i32
+            >= self.config.window_width as i32
+        {
+            self.score_board[0] += 1;
+            self.respawn_ball_from(Pad::Right);
             return false;
         // left wall
-        } else if self.ball_centre[0] - BALL_RADIUS as i32 <= 0 {
-            self.score[1] += 1;
-            self.ball_centre = [2 * PAD_DIM[0] as i32, WIN_DIM[1] as i32 / 2];
-            self.ball_velocity = [400.0, 0.];
+        } else if self.ball.centre_x() - self.config.ball_radius as i32 <= 0 {
+            self.score_board[1] += 1;
+            self.respawn_ball_from(Pad::Left);
             return false;
         // bottom wall
-        } else if self.ball_centre[1] + BALL_RADIUS as i32 >= WIN_DIM[1] as i32 {
-            let reflected = ball_vector.reflect([0., -1.].into());
-            self.ball_velocity = [reflected.x, reflected.y];
+        } else if self.ball.centre_y() + self.config.ball_radius as i32
+            >= self.config.window_height as i32
+        {
+            self.ball.reflect_with_normal([0., -1.]);
         // top wall
-        } else if self.ball_centre[1] - BALL_RADIUS as i32 <= 0 {
-            let reflected = ball_vector.reflect([0., 1.].into());
-            self.ball_velocity = [reflected.x, reflected.y];
+        } else if self.ball.centre_y() - self.config.ball_radius as i32 <= 0 {
+            self.ball.reflect_with_normal([0., 1.]);
         }
-        self.ball_centre[0] += (dt * self.ball_velocity[0]) as i32;
-        self.ball_centre[1] += (dt * self.ball_velocity[1]) as i32;
+
+        self.ball.centre[0] += (dt * self.ball.velocity.i as f64) as i32;
+        self.ball.centre[1] += (dt * self.ball.velocity.j as f64) as i32;
         player_collides_ball
     }
     pub fn export_ball(&self) -> Vec<u8> {
-        //[ball_centre_x(4) - ball_centre_y(4) - ball_velocity_i(8) - ball_velocity_j(8)]
-        let ball_centre_x_bytes = self.ball_centre[0].to_le_bytes();
-        let ball_centre_y_bytes = self.ball_centre[1].to_le_bytes();
-        let ball_vel_i_bytes = self.ball_velocity[0].to_bits().to_ne_bytes();
-        let ball_vel_j_bytes = self.ball_velocity[1].to_bits().to_ne_bytes();
-
-        let mut serialized = Vec::new();
-        serialized.reserve_exact(24);
-        serialized.extend_from_slice(&ball_centre_x_bytes);
-        serialized.extend_from_slice(&ball_centre_y_bytes);
-        serialized.extend_from_slice(&ball_vel_i_bytes);
-        serialized.extend_from_slice(&ball_vel_j_bytes);
-
-        serialized
+        self.ball.export()
     }
-    pub fn reset_ball(&mut self, serialized: [u8; 24]) {
-        //[ball_centre_x(4) - ball_centre_y(4) - ball_velocity_i(8) - ball_velocity_j(8)]
-        let ball_centre_x_bytes: ArrayVec<[u8; 4]> = serialized.iter().cloned().take(4).collect();
-        let ball_centre_y_bytes: ArrayVec<[u8; 4]> =
-            serialized.iter().cloned().skip(4).take(4).collect();
-        let ball_vel_i_bytes: ArrayVec<[u8; 8]> =
-            serialized.iter().cloned().skip(8).take(8).collect();
-        let ball_vel_j_bytes: ArrayVec<[u8; 8]> =
-            serialized.iter().cloned().skip(16).take(8).collect();
+    pub fn reset_ball(&mut self, serialized: [u8; 16]) {
+        self.ball.reset(serialized);
+    }
+}
 
-        self.ball_centre[0] = i32::from_le_bytes(ball_centre_x_bytes.into_inner().unwrap());
-        self.ball_centre[1] = i32::from_le_bytes(ball_centre_y_bytes.into_inner().unwrap());
-        self.ball_velocity[0] =
-            f64::from_bits(u64::from_le_bytes(ball_vel_i_bytes.into_inner().unwrap()));
-        self.ball_velocity[1] =
-            f64::from_bits(u64::from_le_bytes(ball_vel_j_bytes.into_inner().unwrap()));
+pub trait SharedGameModel {
+    fn game_state_copy(&self) -> GameModel;
+}
+
+impl SharedGameModel for Arc<Mutex<GameModel>> {
+    fn game_state_copy(&self) -> GameModel {
+        let guard = self.lock().unwrap();
+        (*guard).clone()
     }
 }
