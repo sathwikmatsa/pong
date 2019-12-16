@@ -24,7 +24,7 @@ pub struct GameModel {
     pub right_pad_top: u32,
     pub score_board: [u8; 2],
     pub player_pad: Pad,
-    config: GameSettings,
+    pub config: GameSettings,
 }
 
 impl GameModel {
@@ -120,7 +120,7 @@ impl GameModel {
             self.ball.velocity = [-(self.config.ball_speed as f32), 0.].into();
         }
     }
-    pub fn update_ball(&mut self, dt: f64) -> bool {
+    pub fn update_ball(&mut self) -> bool {
         let left_paddle_topx = self.config.paddle_margin + self.config.paddle_width;
         let right_paddle_topx =
             self.config.window_width - self.config.paddle_margin - self.config.paddle_width;
@@ -172,8 +172,8 @@ impl GameModel {
             self.ball.reflect_with_normal([0., 1.]);
         }
 
-        self.ball.centre[0] += (dt * self.ball.velocity.i as f64) as i32;
-        self.ball.centre[1] += (dt * self.ball.velocity.j as f64) as i32;
+        self.ball.centre[0] += self.ball.velocity.i as i32;
+        self.ball.centre[1] += self.ball.velocity.j as i32;
         ball_hit
     }
     pub fn export_ball_opp_score(&self) -> (Vec<u8>, u8) {

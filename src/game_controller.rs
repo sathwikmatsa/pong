@@ -1,6 +1,7 @@
 use super::*;
 use piston_window::*;
 use std::sync::{mpsc::Sender, Arc, Mutex};
+use std::time::Instant;
 
 #[repr(u8)]
 pub enum Message {
@@ -23,18 +24,22 @@ impl Message {
 
 pub struct GameController {
     pub state: Arc<Mutex<GameModel>>,
+    lag: u128,
+    timer: Instant,
 }
 
 impl GameController {
     pub fn new(shared_game_state: Arc<Mutex<GameModel>>) -> Self {
         Self {
             state: shared_game_state,
+            lag: 0,
+            timer: Instant::now(),
         }
     }
     pub fn handle_event<E: GenericEvent>(&mut self, e: &E, syncer_conn: &Sender<Message>) {
         // process key presses
+        let mut state = self.state.lock().unwrap();
         if let Some(button) = e.press_args() {
-            let mut state = self.state.lock().unwrap();
             if button == Button::Keyboard(Key::Up) {
                 (*state).move_up();
                 syncer_conn.send(Message::MoveUp).unwrap();
@@ -44,13 +49,16 @@ impl GameController {
             }
         }
 
-        // update ball
-        if let Some(args) = e.update_args() {
-            let mut state = self.state.lock().unwrap();
-            let ball_hit = (*state).update_ball(args.dt);
+        //https://gameprogrammingpatterns.com/game-loop.html#play-catch-up
+        self.lag += self.timer.elapsed().as_millis();
+        self.timer = Instant::now();
+        let ms_per_update = (*state).config.ms_per_update;
+        while self.lag >= ms_per_update {
+            let ball_hit = (*state).update_ball();
             if ball_hit {
                 syncer_conn.send(Message::BallHit).unwrap();
             }
+            self.lag -= ms_per_update;
         }
     }
 }
