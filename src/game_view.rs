@@ -18,7 +18,7 @@ impl GameView {
         glyphs: &mut Glyphs,
     ) {
         screen.draw_2d(e, |c, g, d| {
-            let state = controller.state.game_state_copy();
+            let state = controller.state.capture_game_state();
 
             clear(self.config.bg_color, g);
             let left_paddle =
@@ -36,7 +36,7 @@ impl GameView {
                 ],
                 &c.draw_state,
                 c.transform
-                    .trans(self.config.paddle_margin as f64, state.left_pad_top as f64),
+                    .trans(self.config.paddle_margin as f64, state.left_pad_top),
                 g,
             );
 
@@ -52,15 +52,15 @@ impl GameView {
                     (self.config.window_width
                         - self.config.paddle_width
                         - self.config.paddle_margin) as f64,
-                    state.right_pad_top as f64,
+                    state.right_pad_top,
                 ),
                 g,
             );
 
             ball.draw(
                 circle(
-                    state.ball.centre_x_f64(),
-                    state.ball.centre_y_f64(),
+                    state.ball_centre_x,
+                    state.ball_centre_y,
                     self.config.ball_radius,
                 ),
                 &c.draw_state,
@@ -71,7 +71,7 @@ impl GameView {
             // left player score
             text::Text::new_color(self.config.score_color, self.config.score_font_size)
                 .draw(
-                    &state.score_board[0].to_string(),
+                    &state.left_player_score,
                     glyphs,
                     &c.draw_state,
                     c.transform
@@ -83,7 +83,7 @@ impl GameView {
             // right player score
             text::Text::new_color(self.config.score_color, self.config.score_font_size)
                 .draw(
-                    &state.score_board[1].to_string(),
+                    &state.right_player_score,
                     glyphs,
                     &c.draw_state,
                     c.transform

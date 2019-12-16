@@ -8,6 +8,15 @@ pub enum Pad {
     Right,
 }
 
+pub struct GameStateInstance {
+    pub left_pad_top: f64,
+    pub right_pad_top: f64,
+    pub ball_centre_x: f64,
+    pub ball_centre_y: f64,
+    pub left_player_score: String,
+    pub right_player_score: String,
+}
+
 #[derive(Clone)]
 pub struct GameModel {
     pub ball: Ball,
@@ -176,12 +185,19 @@ impl GameModel {
 }
 
 pub trait SharedGameModel {
-    fn game_state_copy(&self) -> GameModel;
+    fn capture_game_state(&self) -> GameStateInstance;
 }
 
 impl SharedGameModel for Arc<Mutex<GameModel>> {
-    fn game_state_copy(&self) -> GameModel {
-        let guard = self.lock().unwrap();
-        (*guard).clone()
+    fn capture_game_state(&self) -> GameStateInstance {
+        let state = self.lock().unwrap();
+        GameStateInstance {
+            left_pad_top: (*state).left_pad_top as f64,
+            right_pad_top: (*state).right_pad_top as f64,
+            ball_centre_x: (*state).ball.centre_x_f64(),
+            ball_centre_y: (*state).ball.centre_y_f64(),
+            left_player_score: (*state).score_board[0].to_string(),
+            right_player_score: (*state).score_board[1].to_string(),
+        }
     }
 }
