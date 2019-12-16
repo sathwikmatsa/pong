@@ -6,7 +6,7 @@ use std::sync::{mpsc::Sender, Arc, Mutex};
 pub enum Message {
     MoveUp = 1,
     MoveDown = 2,
-    PadCollide = 3,
+    BallHit = 3,
     Invalid = 4,
 }
 
@@ -15,7 +15,7 @@ impl Message {
         match i {
             1 => Message::MoveUp,
             2 => Message::MoveDown,
-            3 => Message::PadCollide,
+            3 => Message::BallHit,
             _ => Message::Invalid,
         }
     }
@@ -47,9 +47,9 @@ impl GameController {
         // update ball
         if let Some(args) = e.update_args() {
             let mut state = self.state.lock().unwrap();
-            let player_collides_ball = (*state).update_ball(args.dt);
-            if player_collides_ball {
-                syncer_conn.send(Message::PadCollide).unwrap();
+            let ball_hit = (*state).update_ball(args.dt);
+            if ball_hit {
+                syncer_conn.send(Message::BallHit).unwrap();
             }
         }
     }

@@ -1,4 +1,5 @@
 use super::*;
+use std::convert::TryInto;
 use std::io::{Read, Write};
 use std::sync::{mpsc::Receiver, Arc, Mutex};
 
@@ -22,11 +23,14 @@ where
             // send player moves to opponent
             if let Ok(ctrl_message) = ctrl_conn.try_recv() {
                 match ctrl_message {
-                    Message::PadCollide => {
+                    Message::BallHit => {
                         let state = self.shared_game_state.lock().unwrap();
-                        let ball_data = (*state).export_ball();
+                        let (ball_data, opp_score) = (*state).export_ball_opp_score();
+                        let mut ball_data_opp_score = vec![];
+                        ball_data_opp_score.extend_from_slice(&ball_data);
+                        ball_data_opp_score.extend_from_slice(&[opp_score]);
                         self.conn.write_all(&[ctrl_message as u8]).unwrap();
-                        self.conn.write_all(&ball_data).unwrap();
+                        self.conn.write_all(&ball_data_opp_score).unwrap();
                     }
                     _ => self.conn.write_all(&[ctrl_message as u8]).unwrap(),
                 }
@@ -40,10 +44,12 @@ where
                 match Message::from_u8(buf[0]) {
                     Message::MoveUp => (*state).move_opponent_up(),
                     Message::MoveDown => (*state).move_opponent_down(),
-                    Message::PadCollide => {
-                        let mut ball_data = [0; 16];
-                        while self.conn.read_exact(&mut ball_data).is_err() {}
-                        (*state).reset_ball(ball_data);
+                    Message::BallHit => {
+                        let mut data = vec![0; 17];
+                        // ball data + score
+                        while self.conn.read_exact(&mut data).is_err() {}
+                        let score = data.pop().unwrap();
+                        (*state).reset_ball_score(data.as_slice().try_into().unwrap(), score);
                     }
                     _ => (),
                 };

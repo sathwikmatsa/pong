@@ -125,7 +125,7 @@ impl GameModel {
         let right_paddle_topx =
             self.config.window_width - self.config.paddle_margin - self.config.paddle_width;
         let ball_speed = self.config.ball_speed;
-        let mut player_collides_ball = false;
+        let mut ball_hit = false;
 
         // collision logic
         // left paddle
@@ -137,7 +137,7 @@ impl GameModel {
             self.ball
                 .reflect_from_left(self.get_bounce_angle(Pad::Left), ball_speed);
             if self.player_pad == Pad::Left {
-                player_collides_ball = true;
+                ball_hit = true;
             }
         // right paddle
         } else if self.ball.collides_right_vseg(
@@ -148,7 +148,7 @@ impl GameModel {
             self.ball
                 .reflect_from_right(self.get_bounce_angle(Pad::Right), ball_speed);
             if self.player_pad == Pad::Right {
-                player_collides_ball = true;
+                ball_hit = true;
             }
         // right wall
         } else if self.ball.centre_x() + self.config.ball_radius as i32
@@ -156,12 +156,12 @@ impl GameModel {
         {
             self.score_board[0] += 1;
             self.respawn_ball_from(Pad::Right);
-            return false;
+            return self.player_pad == Pad::Right;
         // left wall
         } else if self.ball.centre_x() - self.config.ball_radius as i32 <= 0 {
             self.score_board[1] += 1;
             self.respawn_ball_from(Pad::Left);
-            return false;
+            return self.player_pad == Pad::Left;
         // bottom wall
         } else if self.ball.centre_y() + self.config.ball_radius as i32
             >= self.config.window_height as i32
@@ -174,13 +174,24 @@ impl GameModel {
 
         self.ball.centre[0] += (dt * self.ball.velocity.i as f64) as i32;
         self.ball.centre[1] += (dt * self.ball.velocity.j as f64) as i32;
-        player_collides_ball
+        ball_hit
     }
-    pub fn export_ball(&self) -> Vec<u8> {
-        self.ball.export()
+    pub fn export_ball_opp_score(&self) -> (Vec<u8>, u8) {
+        let ball_data = self.ball.export();
+        let player_score = if self.player_pad == Pad::Left {
+            self.score_board[1]
+        } else {
+            self.score_board[0]
+        };
+        (ball_data, player_score)
     }
-    pub fn reset_ball(&mut self, serialized: [u8; 16]) {
+    pub fn reset_ball_score(&mut self, serialized: [u8; 16], score: u8) {
         self.ball.reset(serialized);
+        if self.player_pad == Pad::Left {
+            self.score_board[0] = score;
+        } else {
+            self.score_board[1] = score;
+        }
     }
 }
 
