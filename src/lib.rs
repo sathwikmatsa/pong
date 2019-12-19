@@ -46,6 +46,9 @@ pub use syncer::*;
 pub mod ball;
 pub use ball::*;
 
+pub mod sfx;
+pub use sfx::*;
+
 pub fn is_valid_port(port: &str) -> bool {
     if let Ok(x) = port.parse::<u32>() {
         // max port value

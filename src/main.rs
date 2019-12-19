@@ -11,7 +11,7 @@ fn main() {
         .unwrap_or_else(|e| panic!("Failed to build PistonWindow: {}", e));
 
     let assets = find_folder::Search::ParentsThenKids(3, 3)
-        .for_folder("assets")
+        .for_folder("font")
         .unwrap();
     let mut glyphs = window.load_font(assets.join("square.ttf")).unwrap();
 

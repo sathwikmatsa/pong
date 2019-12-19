@@ -17,7 +17,6 @@ pub struct GameStateInstance {
     pub right_player_score: String,
 }
 
-#[derive(Clone)]
 pub struct GameModel {
     pub ball: Ball,
     pub left_pad_top: u32,
@@ -25,6 +24,7 @@ pub struct GameModel {
     pub score_board: [u8; 2],
     pub player_pad: Pad,
     pub config: GameSettings,
+    sfx: Sfx,
 }
 
 impl GameModel {
@@ -43,6 +43,7 @@ impl GameModel {
             score_board: [0, 0],
             player_pad,
             config,
+            sfx: Sfx::new(),
         }
     }
     pub fn move_up(&mut self) {
@@ -136,6 +137,7 @@ impl GameModel {
         ) {
             self.ball
                 .reflect_from_left(self.get_bounce_angle(Pad::Left), ball_speed);
+            self.sfx.play(Sound::PaddleHit);
             if self.player_pad == Pad::Left {
                 ball_hit = true;
             }
@@ -147,6 +149,7 @@ impl GameModel {
         ) {
             self.ball
                 .reflect_from_right(self.get_bounce_angle(Pad::Right), ball_speed);
+            self.sfx.play(Sound::PaddleHit);
             if self.player_pad == Pad::Right {
                 ball_hit = true;
             }
@@ -156,19 +159,23 @@ impl GameModel {
         {
             self.score_board[0] += 1;
             self.respawn_ball_from(Pad::Right);
+            self.sfx.play(Sound::Goal);
             return self.player_pad == Pad::Right;
         // left wall
         } else if self.ball.centre_x() - self.config.ball_radius as i32 <= 0 {
             self.score_board[1] += 1;
             self.respawn_ball_from(Pad::Left);
+            self.sfx.play(Sound::Goal);
             return self.player_pad == Pad::Left;
         // bottom wall
         } else if self.ball.centre_y() + self.config.ball_radius as i32
             >= self.config.window_height as i32
         {
+            self.sfx.play(Sound::WallHit);
             self.ball.reflect_with_normal([0., -1.]);
         // top wall
         } else if self.ball.centre_y() - self.config.ball_radius as i32 <= 0 {
+            self.sfx.play(Sound::WallHit);
             self.ball.reflect_with_normal([0., 1.]);
         }
 
