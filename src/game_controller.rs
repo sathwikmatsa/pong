@@ -1,6 +1,6 @@
 use super::*;
 use piston_window::*;
-use std::sync::{mpsc::Sender, Arc, Mutex};
+use std::sync::{mpsc::Sender, Arc, RwLock};
 use std::time::Instant;
 
 #[repr(u8)]
@@ -23,13 +23,13 @@ impl Message {
 }
 
 pub struct GameController {
-    pub state: Arc<Mutex<GameModel>>,
+    pub state: Arc<RwLock<GameModel>>,
     lag: u128,
     timer: Instant,
 }
 
 impl GameController {
-    pub fn new(shared_game_state: Arc<Mutex<GameModel>>) -> Self {
+    pub fn new(shared_game_state: Arc<RwLock<GameModel>>) -> Self {
         Self {
             state: shared_game_state,
             lag: 0,
@@ -38,7 +38,7 @@ impl GameController {
     }
     pub fn handle_event<E: GenericEvent>(&mut self, e: &E, syncer_conn: &Sender<Message>) {
         // process key presses
-        let mut state = self.state.lock().unwrap();
+        let mut state = self.state.write().unwrap();
         if let Some(button) = e.press_args() {
             if button == Button::Keyboard(Key::Up) {
                 (*state).move_up();

@@ -1,7 +1,7 @@
 use super::*;
 use piston_window::*;
 use std::net::TcpStream;
-use std::sync::{mpsc::channel, Arc, Mutex};
+use std::sync::{mpsc::channel, Arc, RwLock};
 use std::thread;
 
 pub struct GameWindow {
@@ -20,7 +20,7 @@ impl GameWindow {
         window.set_title(self.title.into());
 
         let model = GameModel::new(self.player_pad, DEFAULT_CONFIG);
-        let shared_model = Arc::new(Mutex::new(model));
+        let shared_model = Arc::new(RwLock::new(model));
         let shared_model_clone = shared_model.clone();
         let exit_button = self.exit_button;
 

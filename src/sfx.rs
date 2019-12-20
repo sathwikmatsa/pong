@@ -25,6 +25,12 @@ pub struct Sfx {
     raw_sounds: Vec<SoundData>,
 }
 
+impl Default for Sfx {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Sfx {
     pub fn new() -> Self {
         let sounds = find_folder::Search::ParentsThenKids(3, 3)

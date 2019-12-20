@@ -1,6 +1,6 @@
 use super::*;
 use std::cmp::min;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, RwLock};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum Pad {
@@ -206,9 +206,9 @@ pub trait SharedGameModel {
     fn capture_game_state(&self) -> GameStateInstance;
 }
 
-impl SharedGameModel for Arc<Mutex<GameModel>> {
+impl SharedGameModel for Arc<RwLock<GameModel>> {
     fn capture_game_state(&self) -> GameStateInstance {
-        let state = self.lock().unwrap();
+        let state = self.read().unwrap();
         GameStateInstance {
             left_pad_top: (*state).left_pad_top as f64,
             right_pad_top: (*state).right_pad_top as f64,

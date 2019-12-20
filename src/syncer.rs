@@ -1,10 +1,10 @@
 use super::*;
 use std::convert::TryInto;
 use std::io::{Read, Write};
-use std::sync::{mpsc::Receiver, Arc, Mutex};
+use std::sync::{mpsc::Receiver, Arc, RwLock};
 
 pub struct Syncer<T: Read + Write> {
-    shared_game_state: Arc<Mutex<GameModel>>,
+    shared_game_state: Arc<RwLock<GameModel>>,
     conn: T,
 }
 
@@ -12,7 +12,7 @@ impl<T> Syncer<T>
 where
     T: Read + Write,
 {
-    pub fn new(shared_game_state: Arc<Mutex<GameModel>>, stream: T) -> Self {
+    pub fn new(shared_game_state: Arc<RwLock<GameModel>>, stream: T) -> Self {
         Self {
             shared_game_state,
             conn: stream,
@@ -24,7 +24,7 @@ where
             if let Ok(ctrl_message) = ctrl_conn.try_recv() {
                 match ctrl_message {
                     Message::BallHit => {
-                        let state = self.shared_game_state.lock().unwrap();
+                        let state = self.shared_game_state.read().unwrap();
                         let (ball_data, opp_score) = (*state).export_ball_opp_score();
                         let mut ball_data_opp_score = vec![];
                         ball_data_opp_score.extend_from_slice(&ball_data);
@@ -39,8 +39,8 @@ where
             // read opponent's movement
             let mut buf = [0; 1];
             if self.conn.read_exact(&mut buf).is_ok() {
-                let mut state = self.shared_game_state.lock().unwrap();
                 // update opponent movement
+                let mut state = self.shared_game_state.write().unwrap();
                 match Message::from_u8(buf[0]) {
                     Message::MoveUp => (*state).move_opponent_up(),
                     Message::MoveDown => (*state).move_opponent_down(),
