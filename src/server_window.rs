@@ -7,23 +7,25 @@ const PORT: &str = "9731";
 pub struct ServerWindow {
     title: &'static str,
     exit_button: Button,
-    ip_addr: String,
     listener: TcpListener,
+    ip_addr: String,
 }
 
 impl ServerWindow {
     pub fn new(title: &'static str, exit_button: Button) -> Self {
+        let mut ip_addr = String::new();
+        set_local_ip_address(&mut ip_addr);
+
         Self {
             title,
             exit_button,
-            ip_addr: String::new(),
-            listener: TcpListener::bind("127.0.0.1:".to_owned() + PORT)
+            listener: TcpListener::bind(format!("{}:{}", ip_addr, PORT))
                 .expect("TcpListener error."),
+            ip_addr,
         }
     }
     pub fn run(&mut self, window: &mut PistonWindow, glyphs: &mut Glyphs) {
         window.set_title(self.title.into());
-        set_local_ip_address(&mut self.ip_addr);
         self.listener
             .set_nonblocking(true)
             .expect("cannot set non blocking");
