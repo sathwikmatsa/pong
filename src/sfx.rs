@@ -8,7 +8,8 @@ use std::sync::Arc;
 pub enum Sound {
     PaddleHit = 0,
     WallHit = 1,
-    Goal = 2,
+    WinPoint = 2,
+    LosePoint = 3,
 }
 
 // https://github.com/RustAudio/rodio/issues/141#issuecomment-336150490
@@ -39,12 +40,12 @@ impl Sfx {
 
         let mut raw_sounds = Vec::new();
         // add audio files in the same index order of Sound enum value
-        ["paddle.wav", "wall.wav", "goal.wav"]
+        ["paddle.wav", "wall.wav", "win.wav", "lose.wav"]
             .iter()
             .for_each(|file| {
                 let mut buf = Vec::new();
                 File::open(sounds.join(file))
-                    .unwrap()
+                    .expect("Sound file not found!")
                     .read_to_end(&mut buf)
                     .unwrap();
                 raw_sounds.push(SoundData(Arc::new(buf)));

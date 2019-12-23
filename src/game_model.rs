@@ -157,16 +157,22 @@ impl GameModel {
         } else if self.ball.centre_x() + self.config.ball_radius as i32
             >= self.config.window_width as i32
         {
-            self.score_board[0] += 1;
+            let player_lost = self.player_pad == Pad::Right;
+            if player_lost {
+                self.score_board[0] += 1;
+                self.sfx.play(Sound::LosePoint);
+            }
             self.respawn_ball_from(Pad::Right);
-            self.sfx.play(Sound::Goal);
-            return self.player_pad == Pad::Right;
+            return player_lost;
         // left wall
         } else if self.ball.centre_x() - self.config.ball_radius as i32 <= 0 {
-            self.score_board[1] += 1;
+            let player_lost = self.player_pad == Pad::Left;
+            if player_lost {
+                self.score_board[1] += 1;
+                self.sfx.play(Sound::LosePoint);
+            }
             self.respawn_ball_from(Pad::Left);
-            self.sfx.play(Sound::Goal);
-            return self.player_pad == Pad::Left;
+            return player_lost;
         // bottom wall
         } else if self.ball.centre_y() + self.config.ball_radius as i32
             >= self.config.window_height as i32
@@ -195,8 +201,10 @@ impl GameModel {
     pub fn reset_ball_score(&mut self, serialized: [u8; 16], score: u8) {
         self.ball.reset(serialized);
         if self.player_pad == Pad::Left {
+            if self.score_board[0] < score {self.sfx.play(Sound::WinPoint);}
             self.score_board[0] = score;
         } else {
+            if self.score_board[1] < score {self.sfx.play(Sound::WinPoint);}
             self.score_board[1] = score;
         }
     }
