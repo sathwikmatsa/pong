@@ -178,10 +178,12 @@ impl GameModel {
             >= self.config.window_height as i32
         {
             self.sfx.play(Sound::WallHit);
+            self.ball.centre[1] = self.config.window_height as i32 - self.config.ball_radius as i32;
             self.ball.reflect_with_normal([0., -1.]);
         // top wall
         } else if self.ball.centre_y() - self.config.ball_radius as i32 <= 0 {
             self.sfx.play(Sound::WallHit);
+            self.ball.centre[1] = self.config.ball_radius as i32;
             self.ball.reflect_with_normal([0., 1.]);
         }
 
