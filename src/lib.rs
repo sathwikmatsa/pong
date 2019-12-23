@@ -5,18 +5,18 @@ pub const DEFAULT_CONFIG: GameSettings = GameSettings {
     paddle_height: 80,
     paddle_round_radius: 0.1,
     paddle_margin: 5,
-    paddle_step: 13,
+    paddle_step: 14,
     ball_radius: 5.,
-    ball_speed: 5,
+    ball_speed: 11,
     ms_per_update: 25,
-    max_bounce_angle: std::f64::consts::PI * 5. / 12.,
+    max_bounce_angle: std::f64::consts::PI * 1. / 3.,
     bg_color: [0.054, 0.062, 0.098, 1.0],
     paddle_color: [1.; 4],
     ball_color: [1.; 4],
     score_color: [1.; 4],
     score_font_size: 12,
-    left_score_xy: [20., 20.],
-    right_score_xy: [610., 20.],
+    left_score_xy: [150., 20.],
+    right_score_xy: [470., 20.],
 };
 
 pub mod client_window;
